@@ -1,25 +1,25 @@
-// app/components/FoodMap.tsx
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import L from 'leaflet'
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
 interface FoodMapProps {
-    position: [number, number]
-    readOnly?: boolean
+    position: [number, number];
+    readOnly?: boolean;
 }
 
-export default function FoodMap({
-                                    position,
-                                    readOnly = false,
-                                }: FoodMapProps) {
+export default function FoodMap({ position, readOnly = false }: FoodMapProps) {
     useEffect(() => {
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+        const proto = L.Icon.Default.prototype as unknown as {
+            _getIconUrl?: unknown;
+        };
+        delete proto._getIconUrl;
 
         L.Icon.Default.mergeOptions({
             iconRetinaUrl,
@@ -27,6 +27,7 @@ export default function FoodMap({
             shadowUrl,
         });
     }, []);
+
     return (
         <div style={{ height: '300px', width: '100%' }}>
             <MapContainer
@@ -45,5 +46,5 @@ export default function FoodMap({
                 </Marker>
             </MapContainer>
         </div>
-    )
+    );
 }
