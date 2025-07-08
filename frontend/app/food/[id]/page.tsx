@@ -1,33 +1,29 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from '@/utils/axios';
 
-type FoodItem = {
-    fooditemId: number;
-    title: string;
-};
-
-type Message = {
-    messageId: number;
-    senderId: number;
-    messageText: string;
-    sentAt: string;
-};
-
 type ExchangeRequest = {
     exchangeId: number;
-    status: string;
     requesterId: number;
     responderId: number;
     requestedItemId: number;
     offeredItemId: number;
+    status: string;
 };
 
-type User = {
-    id: number;
-    [key: string]: unknown;
+type FoodItem = {
+    fooditemId: number;
+    title: string;
+    imageUrl: string;
+};
+
+type Message = {
+    messageId: number;
+    content: string;
+    senderId: number;
+    createdAt: string;
 };
 
 export default function ExchangeDetailPage() {
@@ -36,127 +32,70 @@ export default function ExchangeDetailPage() {
     const [requestedItem, setRequestedItem] = useState<FoodItem | null>(null);
     const [offeredItem, setOfferedItem] = useState<FoodItem | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [newMessage, setNewMessage] = useState<string>('');
-
-    const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL ??
-        (typeof window !== 'undefined' ? window.location.origin : '');
-
-    const user: User | null =
-        typeof window !== 'undefined'
-            ? JSON.parse(localStorage.getItem('user') || 'null')
-            : null;
+    const [error, setError] = useState<string | null>(null);
 
     const fetchAll = useCallback(async () => {
-        if (!id || !user) return;
-
         try {
-            const res = await axios.get(`${baseUrl}/exchangerequests/${id}`);
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            if (!token) {
+                setError('No token found. Please log in again.');
+                return;
+            }
+
+            const authAxios = axios.create({
+                baseURL: 'http://localhost:8080/api',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                withCredentials: true,
+            });
+
+            const res = await authAxios.get(`/exchangerequests/food/${id}`);
             setRequest(res.data);
 
             const [requestedRes, offeredRes] = await Promise.all([
-                axios.get(`${baseUrl}/food/${res.data.requestedItemId}`),
-                axios.get(`${baseUrl}/food/${res.data.offeredItemId}`),
+                authAxios.get(`/food/${res.data.requestedItemId}`),
+                authAxios.get(`/food/${res.data.offeredItemId}`),
             ]);
             setRequestedItem(requestedRes.data);
             setOfferedItem(offeredRes.data);
 
-            const msgRes = await axios.get(`${baseUrl}/messages/exchange/${id}`);
+            const msgRes = await authAxios.get(`/messages/exchange/${id}`);
             setMessages(msgRes.data);
-        } catch (error) {
-            console.error('❌ Failed to fetch data', error);
+        } catch (err: any) {
+            console.error('❌ Failed to fetch data', err);
+            setError('❌ Failed to load exchange detail');
         }
-    }, [id, user]);
+    }, [id]);
 
     useEffect(() => {
-        fetchAll();
-    }, [fetchAll]);
+        if (id) fetchAll();
+    }, [fetchAll, id]);
 
-    const handleSendMessage = async () => {
-        if (!newMessage.trim() || !user) return;
-        try {
-            await axios.post(`${baseUrl}/messages`, {
-                exchangeId: Number(id),
-                senderId: user.id,
-                messageText: newMessage,
-            });
-            setNewMessage('');
-            fetchAll();
-        } catch (err) {
-            console.error('❌ Failed to send message', err);
-        }
-    };
-
-    const handleChangeStatus = async (newStatus: string) => {
-        try {
-            await axios.patch(`${baseUrl}/exchangerequests/${id}/status`, {
-                status: newStatus,
-            });
-            alert(`Status changed to "${newStatus}"`);
-            fetchAll();
-        } catch (err) {
-            console.error('❌ Failed to change status', err);
-            alert('You are not authorized or your request has already been processed.');
-        }
-    };
-
+    if (error) return <p style={{ color: 'red' }}>{error}</p>;
     if (!request || !requestedItem || !offeredItem) return <p>Loading...</p>;
 
     return (
-        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            <h1>🔍 Exchange #{request.exchangeId}</h1>
-            <p>Status: <strong>{request.status}</strong></p>
-            <p>Requester: {request.requesterId}</p>
-            <p>Responder: {request.responderId}</p>
-            <p>Requested Item: {requestedItem.title}</p>
-            <p>Offered Item: {offeredItem.title}</p>
+        <div style={{ padding: 20 }}>
+            <h1>🔁 Exchange Detail #{request.exchangeId}</h1>
+            <p>Status: {request.status}</p>
 
-            {user?.id === request.responderId && request.status === 'PENDING' && (
-                <div style={{ margin: '16px 0' }}>
-                    <button onClick={() => handleChangeStatus('ACCEPTED')} style={{ marginRight: '10px' }}>
-                        ✅ ACCEPTED
-                    </button>
-                    <button onClick={() => handleChangeStatus('REJECTED')}>❌ REJECTED</button>
-                </div>
-            )}
+            <h2>🛒 Requested Item</h2>
+            <p>{requestedItem.title}</p>
+            <img src={requestedItem.imageUrl} alt={requestedItem.title} style={{ width: 200 }} />
 
-            {request.status === 'COMPLETED' && (
-                <p style={{ color: 'green', fontWeight: 'bold' }}>
-                    🎉 The transaction has been completed!
-                </p>
-            )}
+            <h2>🎁 Offered Item</h2>
+            <p>{offeredItem.title}</p>
+            <img src={offeredItem.imageUrl} alt={offeredItem.title} style={{ width: 200 }} />
 
-            <hr />
             <h2>💬 Messages</h2>
-            <div style={{
-                border: '1px solid #ccc',
-                padding: '10px',
-                marginBottom: '10px',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                background: '#f9f9f9',
-                borderRadius: '6px',
-            }}>
-                {messages.map(msg => (
-                    <div key={msg.messageId} style={{ marginBottom: '8px' }}>
-                        <strong>👤 User {msg.senderId}</strong>: {msg.messageText}
-                        <div style={{ fontSize: '0.8em', color: 'gray' }}>
-                            {new Date(msg.sentAt).toLocaleString()}
-                        </div>
-                    </div>
+            <ul>
+                {messages.map((msg) => (
+                    <li key={msg.messageId}>
+                        [{msg.senderId}] {msg.content} ({new Date(msg.createdAt).toLocaleString()}
+                    </li>
                 ))}
-            </div>
-
-            <textarea
-                rows={3}
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                placeholder="✍️ Type your message here..."
-                style={{ width: '100%', marginBottom: '10px', padding: '8px', borderRadius: '4px' }}
-            />
-            <button onClick={handleSendMessage} style={{ padding: '8px 16px' }}>
-                📩 Send Message
-            </button>
+            </ul>
         </div>
     );
 }

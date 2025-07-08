@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import axios from '@/utils/axios'
+
+const FoodMap = dynamic(() => import('../../components/FoodMap'), { ssr: false })
 
 type FoodItem = {
     fooditemId: number
     title: string
+    latitude: number
+    longitude: number
 }
 
 type Message = {
@@ -88,15 +93,24 @@ export default function ExchangeDetailPage() {
             <p>Requested Item: {requestedItem.title}</p>
             <p>Offered Item: {offeredItem.title}</p>
 
+            {/* ✅ 수락/거절 버튼 표시 조건 */}
             {user?.id === request.responderId && request.status === 'PENDING' && (
                 <div style={{ margin: '16px 0' }}>
-                    <button onClick={() => handleChangeStatus('ACCEPTED')} style={{ marginRight: '10px' }}>✅ ACCEPTED</button>
-                    <button onClick={() => handleChangeStatus('REJECTED')}>❌ REJECTED</button>
+                    <button onClick={() => handleChangeStatus('ACCEPTED')} style={{ marginRight: '10px' }}>✅ ACCEPT</button>
+                    <button onClick={() => handleChangeStatus('REJECTED')}>❌ REJECT</button>
                 </div>
             )}
 
             {request.status === 'COMPLETED' && (
                 <p style={{ color: 'green', fontWeight: 'bold' }}>🎉 The transaction has been completed!</p>
+            )}
+
+            {/* ✅ 위치 지도 렌더링 */}
+            {requestedItem.latitude && requestedItem.longitude && (
+                <div style={{ marginTop: '20px' }}>
+                    <h3>📍 Location</h3>
+                    <FoodMap position={[requestedItem.latitude, requestedItem.longitude]} readOnly />
+                </div>
             )}
 
             <hr />
@@ -126,7 +140,6 @@ export default function ExchangeDetailPage() {
                 style={{ width: '100%', marginBottom: '10px', padding: '8px', borderRadius: '4px' }}
             />
             <button onClick={handleSendMessage} style={{ padding: '8px 16px' }}>📩 Send Message</button>
-            )
         </div>
     )
 }
