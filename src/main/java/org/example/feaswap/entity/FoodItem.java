@@ -55,4 +55,5 @@ public class FoodItem {
 
     @Column(name = "iscompleted", nullable = false)
     private Boolean isCompleted;
+
 }

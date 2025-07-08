@@ -33,9 +33,10 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/user/**","/api/auth/**").permitAll()
                         .requestMatchers("swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/food").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/food/{foodItemId}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/food").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/food/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/food/**").authenticated()
@@ -51,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/notifications/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/notifications").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/notifications/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/exchangerequests/food/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/exchangerequests/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/exchangerequests/**").authenticated()
                         .anyRequest().authenticated()
@@ -64,7 +66,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:3000","https://yoochanghuns-projects.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 

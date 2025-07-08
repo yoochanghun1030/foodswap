@@ -57,6 +57,15 @@ public class ExchangeRequestService {
     }
 
     @Transactional(readOnly = true)
+    public ExchangeRequestResponseDto getByFoodItemId(Integer foodItemId) {
+        return exchangeRequestRepository.findByRequestedItem_FoodItemId(foodItemId)
+                .map(ExchangeRequestResponseDto::fromEntity)
+                .or(() -> exchangeRequestRepository.findByOfferedItem_FoodItemId(foodItemId)
+                        .map(ExchangeRequestResponseDto::fromEntity))
+                .orElseThrow(() -> new RuntimeException("ExchangeRequest not found for foodItemId: " + foodItemId));
+    }
+
+    @Transactional(readOnly = true)
     public List<ExchangeRequestResponseDto> getAll() {
         return exchangeRequestRepository.findAll().stream()
                 .map(ExchangeRequestResponseDto::fromEntity)
@@ -80,6 +89,17 @@ public class ExchangeRequestService {
         }
 
         request.setStatus(status);
+
+        if (status == ExchangeStatus.ACCEPTED) {
+            FoodItem requestedItem = request.getRequestedItem();
+            FoodItem offeredItem = request.getOfferedItem();
+
+            requestedItem.setIsCompleted(true);
+            offeredItem.setIsCompleted(true);
+
+            foodItemRepository.save(requestedItem);
+            foodItemRepository.save(offeredItem);
+        }
     }
 
 }

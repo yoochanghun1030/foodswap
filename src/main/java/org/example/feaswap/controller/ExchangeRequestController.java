@@ -7,6 +7,7 @@ import org.example.feaswap.entity.User;
 import org.example.feaswap.service.ExchangeRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,11 @@ public class ExchangeRequestController {
     @GetMapping("/{id}")
     public ResponseEntity<ExchangeRequestResponseDto> getOne(@PathVariable Integer id) {
         return ResponseEntity.ok(exchangeRequestService.getById(id));
+    }
+
+    @GetMapping("/food/{foodItemId}")
+    public ResponseEntity<ExchangeRequestResponseDto> getByFoodItemId(@PathVariable Integer foodItemId) {
+        return ResponseEntity.ok(exchangeRequestService.getByFoodItemId(foodItemId));
     }
 
     @GetMapping
