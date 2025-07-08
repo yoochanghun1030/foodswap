@@ -5,6 +5,10 @@ import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import iconUrl from 'leaflet/dist/images/marker-icon.png'
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+
 interface FoodMapProps {
     position: [number, number]
     readOnly?: boolean
@@ -14,15 +18,15 @@ export default function FoodMap({
                                     position,
                                     readOnly = false,
                                 }: FoodMapProps) {
-
     useEffect(() => {
-        delete (L.Icon.Default.prototype as any)._getIconUrl
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+
         L.Icon.Default.mergeOptions({
-            iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-            iconUrl:       require('leaflet/dist/images/marker-icon.png'),
-            shadowUrl:     require('leaflet/dist/images/marker-shadow.png'),
-        })
-    }, [])
+            iconRetinaUrl,
+            iconUrl,
+            shadowUrl,
+        });
+    }, []);
     return (
         <div style={{ height: '300px', width: '100%' }}>
             <MapContainer

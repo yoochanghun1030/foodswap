@@ -1,117 +1,140 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import axios from '@/utils/axios';
+import { useEffect, useState, useCallback } from 'react'
+import { useParams } from 'next/navigation'
+import axios from '@/utils/axios'
 
-const FoodMap = dynamic(() => import('../../components/FoodMap'), {
-    ssr: false,
-});
+type FoodItem = {
+    fooditemId: number
+    title: string
+}
 
-type Food = {
-    fooditemId: number;
-    ownerId: number;
-    title: string;
-    category: string;
-    nutritionFacts: string;
-    imageUrl: string;
-    latitude: number;
-    longitude: number;
-};
+type Message = {
+    messageId: number
+    senderId: number
+    messageText: string
+    sentAt: string
+}
 
-type User = { id: number };
+type ExchangeRequest = {
+    exchangeId: number
+    status: string
+    requesterId: number
+    responderId: number
+    requestedItemId: number
+    offeredItemId: number
+}
 
-export default function FoodDetailPage() {
-    const { id } = useParams<{ id: string }>();
-    const router = useRouter();
-    const [food, setFood] = useState<Food | null>(null);
-    const [user, setUser] = useState<User | null>(null);
+export default function ExchangeDetailPage() {
+    const { id } = useParams()
+    const [request, setRequest] = useState<ExchangeRequest | null>(null)
+    const [requestedItem, setRequestedItem] = useState<FoodItem | null>(null)
+    const [offeredItem, setOfferedItem] = useState<FoodItem | null>(null)
+    const [messages, setMessages] = useState<Message[]>([])
+    const [newMessage, setNewMessage] = useState<string>('')
+
+    const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || '{}') : null
+
+    const fetchAll = useCallback(async () => {
+        try {
+            const res = await axios.get(`/exchangerequests/${id}`)
+            setRequest(res.data)
+
+            const [requestedRes, offeredRes] = await Promise.all([
+                axios.get(`/food/${res.data.requestedItemId}`),
+                axios.get(`/food/${res.data.offeredItemId}`)
+            ])
+            setRequestedItem(requestedRes.data)
+            setOfferedItem(offeredRes.data)
+
+            const msgRes = await axios.get(`/messages/exchange/${id}`)
+            setMessages(msgRes.data)
+        } catch (error) {
+            console.error('❌ Failed to fetch data', error)
+        }
+    }, [id])
 
     useEffect(() => {
-        const stored = localStorage.getItem('user');
-        if (stored) setUser(JSON.parse(stored));
-        axios
-            .get<Food>(`/food/${id}`)
-            .then(res => setFood(res.data))
-            .catch(() => alert('❌ Failed to load food details.'));
-    }, [id]);
+        if (id) fetchAll()
+    }, [id, fetchAll])
 
-    if (!food) return <p>Loading…</p>;
+    const handleSendMessage = async () => {
+        if (!newMessage.trim()) return
+        try {
+            await axios.post('/messages', {
+                exchangeId: Number(id),
+                senderId: user?.id,
+                messageText: newMessage
+            })
+            setNewMessage('')
+            fetchAll()
+        } catch (err) {
+            console.error('❌ Failed to send message', err)
+        }
+    }
 
-    const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL ??
-        (typeof window !== 'undefined' ? window.location.origin : '');
-    const imgSrc = food.imageUrl.startsWith('http')
-        ? food.imageUrl
-        : `${baseUrl}${food.imageUrl}`;
+    const handleChangeStatus = async (newStatus: string) => {
+        try {
+            await axios.patch(`/exchangerequests/${id}/status`, {
+                status: newStatus
+            })
+            alert(`Status changed to "${newStatus}"`)
+            fetchAll()
+        } catch (err) {
+            console.error('❌ Failed to change status', err)
+            alert('You are not authorized or your request has already been processed.')
+        }
+    }
 
-    const handleDelete = async () => {
-        if (!confirm('Delete this food?')) return;
-        await axios.delete(`/food/${food.fooditemId}`);
-        alert('✅ Deleted!');
-        router.push('/food');
-    };
+    if (!request || !requestedItem || !offeredItem) return <p>Loading...</p>
 
     return (
-        <div style={{ padding: 20, maxWidth: 800, margin: '0 auto' }}>
-            <h1>{food.title}</h1>
-            <p>
-                <strong>Category:</strong> {food.category}
-            </p>
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{food.nutritionFacts}</pre>
+        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+            <h1>🔍 Exchange #{request.exchangeId}</h1>
+            <p>Status: <strong>{request.status}</strong></p>
+            <p>Requester: {request.requesterId}</p>
+            <p>Responder: {request.responderId}</p>
+            <p>Requested Item: {requestedItem.title}</p>
+            <p>Offered Item: {offeredItem.title}</p>
 
-            {/* 이미지 */}
-            {food.imageUrl && (
-                <img
-                    src={imgSrc}
-                    alt={food.title}
-                    style={{ maxWidth: '100%', marginTop: 10, borderRadius: 6 }}
-                />
-            )}
-
-            {food.latitude != null && food.longitude != null ? (
-                <div style={{ marginTop: 20 }}>
-                    <h2>📍 Trading location</h2>
-                    <FoodMap position={[food.latitude, food.longitude]} readOnly />
+            {user?.id === request.responderId && request.status === 'PENDING' && (
+                <div style={{ margin: '16px 0' }}>
+                    <button onClick={() => handleChangeStatus('ACCEPTED')} style={{ marginRight: '10px' }}>✅ ACCEPTED</button>
+                    <button onClick={() => handleChangeStatus('REJECTED')}>❌ REJECTED</button>
                 </div>
-            ) : (
-                <p style={{ color: '#888' }}>⚠️ There is no transaction location info.</p>
             )}
 
-            <div style={{ marginTop: 30 }}>
-                {user?.id === food.ownerId && (
-                    <button
-                        onClick={handleDelete}
-                        style={{
-                            marginRight: 10,
-                            backgroundColor: '#c00',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 5,
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        🗑️ Delete this food
-                    </button>
-                )}
-                <button
-                    onClick={() =>
-                        router.push(`/exchange/request?targetFoodId=${food.fooditemId}`)
-                    }
-                    style={{
-                        backgroundColor: '#2b7',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 5,
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                    }}
-                >
-                    🤝 Request an exchange for this food
-                </button>
+            {request.status === 'COMPLETED' && (
+                <p style={{ color: 'green', fontWeight: 'bold' }}>🎉 The transaction has been completed!</p>
+            )}
+
+            <hr />
+            <h2>💬 Messages</h2>
+            <div style={{
+                border: '1px solid #ccc',
+                padding: '10px',
+                marginBottom: '10px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                background: '#f9f9f9',
+                borderRadius: '6px'
+            }}>
+                {messages.map(msg => (
+                    <div key={msg.messageId} style={{ marginBottom: '8px' }}>
+                        <strong>👤 User {msg.senderId}</strong>: {msg.messageText}
+                        <div style={{ fontSize: '0.8em', color: 'gray' }}>{new Date(msg.sentAt).toLocaleString()}</div>
+                    </div>
+                ))}
             </div>
+
+            <textarea
+                rows={3}
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                placeholder="✍️ Type your message here..."
+                style={{ width: '100%', marginBottom: '10px', padding: '8px', borderRadius: '4px' }}
+            />
+            <button onClick={handleSendMessage} style={{ padding: '8px 16px' }}>📩 Send Message</button>
         </div>
-    );
+    )
 }

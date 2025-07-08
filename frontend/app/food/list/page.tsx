@@ -24,8 +24,17 @@ export default function FoodListPage() {
     const router = useRouter();
 
     useEffect(() => {
-        const stored = localStorage.getItem('user');
-        if (stored) setUser(JSON.parse(stored));
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('user');
+            if (stored) {
+                try {
+                    setUser(JSON.parse(stored));
+                } catch (e) {
+                    console.error('Failed to parse user from localStorage', e);
+                }
+            }
+        }
+
         axios
             .get<FoodItem[]>('/food')
             .then(res => setFoods(res.data))
@@ -33,8 +42,7 @@ export default function FoodListPage() {
     }, []);
 
     const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL ??
-        (typeof window !== 'undefined' ? window.location.origin : '');
+        process.env.NEXT_PUBLIC_API_URL ?? (typeof window !== 'undefined' ? window.location.origin : '');
 
     return (
         <div style={{ padding: 20 }}>
@@ -50,7 +58,6 @@ export default function FoodListPage() {
                 }}
             >
                 {foods.map(food => {
-
                     const src = food.imageUrl.startsWith('http')
                         ? food.imageUrl
                         : `${baseUrl}${food.imageUrl}`;
@@ -104,14 +111,10 @@ export default function FoodListPage() {
                                             onClick={e => {
                                                 e.preventDefault();
                                                 if (!confirm('Are you sure?')) return;
-                                                axios
-                                                    .delete(`/food/${food.fooditemId}`)
-                                                    .then(() => {
-                                                        alert('✅ Deleted!');
-                                                        setFoods(curr =>
-                                                            curr.filter(f => f.fooditemId !== food.fooditemId)
-                                                        );
-                                                    });
+                                                axios.delete(`/food/${food.fooditemId}`).then(() => {
+                                                    alert('✅ Deleted!');
+                                                    setFoods(curr => curr.filter(f => f.fooditemId !== food.fooditemId));
+                                                });
                                             }}
                                             style={{
                                                 marginRight: 8,
@@ -126,12 +129,12 @@ export default function FoodListPage() {
                                             🗑️ Delete
                                         </button>
                                     )}
-                                    {!food.isCompleted && (
+                                    {!food.isCompleted && user && (
                                         <button
                                             onClick={e => {
                                                 e.preventDefault();
                                                 router.push(
-                                                    `/exchange/create?requesterId=${user?.id}&responderId=${food.ownerId}&requestedItemId=${food.fooditemId}`
+                                                    `/exchange/create?requesterId=${user.id}&responderId=${food.ownerId}&requestedItemId=${food.fooditemId}`
                                                 );
                                             }}
                                             style={{
