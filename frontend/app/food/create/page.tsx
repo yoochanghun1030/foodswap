@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from 'react'
 import axios from '@/utils/axios'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
