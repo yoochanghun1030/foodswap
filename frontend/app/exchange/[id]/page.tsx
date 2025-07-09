@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -92,7 +92,6 @@ export default function ExchangeDetailPage() {
             <p>Requested Item: {requestedItem.title}</p>
             <p>Offered Item: {offeredItem.title}</p>
 
-            {/* ✅ 수락/거절 버튼 표시 조건 */}
             {user?.id === request.responderId && request.status === 'PENDING' && (
                 <div style={{ margin: '16px 0' }}>
                     <button onClick={() => handleChangeStatus('ACCEPTED')} style={{ marginRight: '10px' }}>✅ ACCEPT</button>
@@ -104,7 +103,6 @@ export default function ExchangeDetailPage() {
                 <p style={{ color: 'green', fontWeight: 'bold' }}>🎉 The transaction has been completed!</p>
             )}
 
-            {/* ✅ 위치 지도 렌더링 */}
             {requestedItem.latitude && requestedItem.longitude && (
                 <div style={{ marginTop: '20px' }}>
                     <h3>📍 Location</h3>

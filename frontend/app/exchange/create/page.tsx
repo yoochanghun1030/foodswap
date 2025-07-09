@@ -1,34 +1,31 @@
-"use client";
-export const dynamic = "force-dynamic";
+// frontend/app/exchange/create/page.tsx
+
+'use client';
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import axios from '@/utils/axios';
 
 export default function CreateExchangePage() {
-    const searchParams = useSearchParams();
-
-    const [requesterId, setRequesterId] = useState('');
-    const [responderId, setResponderId] = useState('');
+    const [requesterId, setRequesterId]         = useState('');
+    const [responderId, setResponderId]         = useState('');
     const [requestedItemId, setRequestedItemId] = useState('');
-    const [offeredItemId, setOfferedItemId] = useState('');
-    const [result, setResult] = useState<string | null>(null);
+    const [offeredItemId, setOfferedItemId]     = useState('');
+    const [result, setResult]                   = useState<string | null>(null);
 
     useEffect(() => {
-        const requester = searchParams.get('requesterId');
-        const responder = searchParams.get('responderId');
-        const requestedItem = searchParams.get('requestedItemId');
 
-        if (requester) setRequesterId(requester);
-        if (responder) setResponderId(responder);
-        if (requestedItem) setRequestedItemId(requestedItem);
-    }, [searchParams]);
+        const params = new URLSearchParams(window.location.search);
+        setRequesterId(params.get('requesterId') || '');
+        setResponderId(params.get('responderId') || '');
+        setRequestedItemId(params.get('requestedItemId') || '');
+    }, []);
 
     const handleSubmit = async () => {
         try {
             const res = await axios.post('/exchangerequests', {
-                requesterId: Number(requesterId),
-                responderId: Number(responderId),
+                requesterId:   Number(requesterId),
+                responderId:   Number(responderId),
                 requestedItemId: Number(requestedItemId),
                 offeredItemId: Number(offeredItemId),
             });
@@ -40,7 +37,7 @@ export default function CreateExchangePage() {
     };
 
     return (
-        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
             <h1>➕ Create Exchange Request</h1>
 
             <div>
@@ -64,10 +61,11 @@ export default function CreateExchangePage() {
                 />
             </div>
 
-            <button onClick={handleSubmit} style={{ marginTop: '20px' }}>
+            <button onClick={handleSubmit} style={{ marginTop: 20 }}>
                 Submit
             </button>
-            {result && <p style={{ marginTop: '10px' }}>{result}</p>}
+
+            {result && <p style={{ marginTop: 10 }}>{result}</p>}
         </div>
     );
 }

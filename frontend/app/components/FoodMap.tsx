@@ -1,29 +1,28 @@
-"use client";
+// frontend/app/components/FoodMap.tsx
+
+'use client';
+
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+import 'leaflet/dist/leaflet.css';
 
 interface FoodMapProps {
     position: [number, number];
     readOnly?: boolean;
 }
 
-export default function FoodMap({ position, readOnly = false }: FoodMapProps) {
+export default function FoodMap({
+                                    position,
+                                    readOnly = false,
+                                }: FoodMapProps) {
     useEffect(() => {
 
-        const proto = L.Icon.Default.prototype as unknown as {
-            _getIconUrl?: unknown;
-        };
-        delete proto._getIconUrl;
-
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-            iconRetinaUrl,
-            iconUrl,
-            shadowUrl,
+            iconRetinaUrl: '/leaflet/images/marker-icon-2x.png',
+            iconUrl:       '/leaflet/images/marker-icon.png',
+            shadowUrl:     '/leaflet/images/marker-shadow.png',
         });
     }, []);
 
