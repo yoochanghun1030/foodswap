@@ -14,4 +14,4 @@ RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests
 
 # Step 6: 앱 실행
-CMD ["java", "-jar", "target/*.jar"]
+CMD ["java", "-jar", "target/foodswap-0.0.1-SNAPSHOT.jar"]
