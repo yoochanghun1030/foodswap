@@ -40,7 +40,7 @@ public class FoodItem {
     @Column(name = "imageurl", length = 255, nullable = true)
     private String imageUrl;
 
-    @Column(name = "nutritionfacts", columnDefinition = "JSON", nullable = true)
+    @Column(name = "nutritionfacts", columnDefinition = "TEXT")
     private String nutritionFacts;
 
     @Column(name = "latitude", nullable = true)
