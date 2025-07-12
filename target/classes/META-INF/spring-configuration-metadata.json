@@ -10,7 +10,8 @@
     {
       "name": "jwt.expiration",
       "type": "java.lang.Long",
-      "sourceType": "org.example.feaswap.config.JwtProperties"
+      "sourceType": "org.example.feaswap.config.JwtProperties",
+      "defaultValue": 0
     },
     {
       "name": "jwt.secret",
