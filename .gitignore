@@ -31,3 +31,15 @@ build/
 
 ### VS Code ###
 .vscode/
+### env ###
+PORT=8080
+
+JDBC_URL=jdbc:mysql://aws.connect.psdb.io/foodswap?sslMode=require
+DB_USER=7pvyxr067rmxj43cclx
+DB_PASSWORD=pscale_pw_xooRABd6PhJ09b1hXgZhRbdOf0VFcfGYGRkDuyCVCKYg
+
+JWT_SECRET=ybk!kms@ych#ymj$family%3017103090
+JWT_EXPIRATION=3600000
+
+spring.config.import=optional:dotenv:.env
+
